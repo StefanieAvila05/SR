@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>El Cofre de Amor Interactivo 💕</title>
+<style>
+/* Estilos Base */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0f1724;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    box-sizing: border-box;
+    transition: background 1s ease;
+}
+h1 {
+    color: #ff6b9a;
+    margin: 20px 0 10px;
+}
+p {
+    max-width: 700px;
+    text-align: center;
+    margin: 0 0 20px;
+    line-height: 1.5;
+}
+
+/* --- Estilos del Cofre --- */
+.chest-container {
+    width: 300px;
+    height: 200px;
+    position: relative;
+    perspective: 1000px; /* Perspectiva para 3D */
+    margin: 30px 0;
+}
+.chest {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    transform-style: preserve-3d;
+    cursor: pointer;
+    transition: transform 0.5s;
+}
+
+/* Base del Cofre */
+.chest-base {
+    width: 100%;
+    height: 100%;
+    background: #5a3d2b; /* Marrón oscuro */
+    border: 5px solid #8b604a;
+    border-radius: 8px;
+    position: absolute;
+    bottom: 0;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Tapa del Cofre */
+.chest-lid {
+    width: 100%;
+    height: 50px; /* Altura de la tapa */
+    background: #8b604a; /* Marrón medio */
+    border-radius: 8px 8px 0 0;
+    position: absolute;
+    top: -10px;
+    transform-origin: 50% 100%; /* Punto de giro en la bisagra trasera */
+    transition: transform 0.8s ease-out;
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+/* Cerradura (simulación visual) */
+.chest-lid::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 10px;
+    background: #ffd700; /* Dorado */
+    border-radius: 0 0 5px 5px;
+}
+/* Estado: Cofre Abierto */
+.chest.open .chest-lid {
+    transform: rotateX(-90deg); /* La tapa se levanta 90 grados */
+}
+
+/* --- Estilos de la Carta Revelada --- */
+#revealedPhrase {
+    width: 200px;
+    height: 120px;
+    background: #fff8f0; /* Papel suave */
+    color: #444;
+    padding: 15px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0); /* Empieza pequeño y centrado */
+    opacity: 0;
+    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+    font-size: 1.1em;
+    font-style: italic;
+    line-height: 1.4;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+}
+/* Animación de salida (volando) */
+#revealedPhrase.out {
+    transform: translate(-50%, -150%) scale(1.5) rotateZ(10deg); /* Sale hacia arriba y gira */
+    opacity: 0;
+}
+/* Animación de entrada */
+#revealedPhrase.in {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+/* --- Controles e Indicadores --- */
+.controls-indicators {
+    margin-top: 15px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    background: #1c2236;
+    padding: 10px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.btn {
+    background: #ff6b9a;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 20px;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9em;
+    transition: background 0.2s;
+    text-transform: uppercase;
+}
+.btn:hover:not(:disabled) {
+    background: #e05c8a;
+}
+.btn:disabled {
+    background: #888;
+    cursor: default;
+}
+.score-display {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #ffb8c9;
+}
+
+/* --- Modal Final (Carta) --- */
+.final-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease-in-out;
+    z-index: 1000;
+}
+.final-modal.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+.present {
+    background: #252b41;
+    padding: 30px;
+    max-width: 650px; 
+    border-radius: 14px;
+    overflow-y: auto;
+    max-height: 90vh;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.present h2 {
+    color: #ff6b9a;
+    border-bottom: 2px solid #ff6b9a;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.present p {
+    text-align: left;
+    margin-bottom: 15px;
+    font-size: 1.05em;
+}
+.present .btn {
+    margin-top: 20px;
+    font-size: 1em;
+}
+@keyframes zoomIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+/* Responsive */
+@media (max-width: 500px) {
+    .chest-container { width: 250px; height: 180px; }
+}
+</style>
+</head>
+<body>
+    <h1>El Cofre de Amor Interactivo 💕</h1>
+    <p>
+        Haz clic en el cofre para abrirlo y revelar una por una las cartas de amor. 
+        ¡Hay **10 frases** y una carta final esperándote!
+    </p>
+
+    <audio id="backgroundMusic" loop muted>
+      <source src="Pero Te Conocí.mp3" type="audio/mpeg"> 
+      Tu navegador no soporta el elemento de audio.
+    </audio>
+
+    <div class="chest-container">
+        <div id="loveChest" class="chest">
+            <div class="chest-lid"></div>
+            <div class="chest-base"></div>
+        </div>
+        <div id="revealedPhrase"></div>
+    </div>
+
+    <div class="controls-indicators">
+        <button id="restartBtn" class="btn" disabled>Reiniciar</button>
+        <span class="score-display">Frase: <span id="phraseCount">0</span>/10</span>
+    </div>
+
+    <div id="finalModal" class="final-modal">
+        <div class="present">
+            <h2>Feliz 2 meses 💌</h2>
+            <p>Amor mío,</p>
+            <p>Hoy celebramos dos meses que han sido de peleas y amor. Amo ver tu sonrisa, que me hacen sentir la persona más afortunada del mundo. Cada instante contigo es único, porque logras que me olvide de todo y solo exista nuestro momento.</p>
+            <p>Admiro cómo me haces sentir valorada y especial, con cada gesto y cada detalle. Me atraes en todas las formas posibles: con tu ternura, tu forma de tratarme y también con la manera en la que me robas suspiros sin darte cuenta.</p>
+            <p>Espero seguir a tu lado, compartiendo risas, sueños y días sencillos que se vuelven mágicos contigo. Estos dos meses son apenas el inicio de algo hermoso que quiero seguir construyendo junto a ti.</p>
+            <p>Gracias por ser a veces mi tormento jaja pero aun asi eres mi alegría y no podria vivir sin ti. Te amo. 💕</p>
+            <button id="closeFinal" class="btn">Cerrar Carta</button>
+        </div>
+    </div>
+
+<script>
+    // --- Configuración y Datos ---
+    const CONFIG = {
+        LOVE_CHEST_ID: "loveChest",
+        RESTART_BTN_ID: "restartBtn",
+        PHRASE_COUNT_ID: "phraseCount",
+        REVEALED_PHRASE_ID: "revealedPhrase",
+        FINAL_MODAL_ID: "finalModal",
+        CLOSE_FINAL_ID: "closeFinal",
+        MAX_PHRASES: 10,
+        DEFAULT_VOLUME: 0.4,
+        ANIMATION_TIME: 800 // Tiempo total de la animación de la tapa
+    };
+
+    // FRASES PERSONALIZADAS DEL USUARIO
+    const FRASES = [
+        "Amo tu sonrisa 💕",
+        "Eres mi refugio 💖",
+        "Me haces sentir única 🌹",
+        "Tus ojos me encantan ✨",
+        "Adoro tus detalles 💝",
+        "Me haces desconectar del mundo al estar juntos 🌍",
+        "A tu lado todo es especial 💫",
+        "Me atraes emocionalmente 💗",
+        "Contigo todo es bonito 🎶",
+        "Te elijo cada día ❤️"
+    ];
+
+    // --- Variables y Elementos del DOM ---
+    let currentPhraseIndex = 0;
+    let musicStarted = false;
+    let isAnimating = false;
+
+    const loveChest = document.getElementById(CONFIG.LOVE_CHEST_ID);
+    const restartBtn = document.getElementById(CONFIG.RESTART_BTN_ID);
+    const phraseCountDisplay = document.getElementById(CONFIG.PHRASE_COUNT_ID);
+    const revealedPhraseElement = document.getElementById(CONFIG.REVEALED_PHRASE_ID);
+    const finalModal = document.getElementById(CONFIG.FINAL_MODAL_ID);
+    const music = document.getElementById('backgroundMusic');
+    
+    music.volume = CONFIG.DEFAULT_VOLUME;
+    phraseCountDisplay.textContent = currentPhraseIndex;
+
+
+    // --- FUNCIÓN ÚNICA PARA INICIAR EL AUDIO ---
+    function startMusic() {
+        if (!musicStarted) {
+            music.muted = false;
+            music.play().then(() => {
+                musicStarted = true;
+                document.body.removeEventListener('click', startMusic);
+                document.body.removeEventListener('touchstart', startMusic);
+            }).catch(e => {
+                console.error("Error al reproducir audio:", e);
+            });
+        }
+    }
+    
+    // Inicia el audio con la primera interacción del usuario en cualquier parte del body
+    document.body.addEventListener('click', startMusic);
+    document.body.addEventListener('touchstart', startMusic); 
+
+
+    // --- LÓGICA PRINCIPAL DE REVELACIÓN (El "Cofre Mágico") ---
+
+    function handleChestClick() {
+        if (isAnimating) return; // Prevenir clics múltiples durante la animación
+
+        isAnimating = true;
+
+        if (currentPhraseIndex < CONFIG.MAX_PHRASES) {
+            // 1. Mostrar la Tapa Abierta
+            loveChest.classList.add('open');
+
+            // 2. Animación de Salida (Ocultar la frase anterior, si la hay)
+            revealedPhraseElement.classList.remove('in');
+            revealedPhraseElement.classList.add('out');
+
+            // Esperar a que la tapa se abra y la animación de salida termine
+            setTimeout(() => {
+                
+                // 3. Mostrar nueva Frase (Carta)
+                const nextPhrase = FRASES[currentPhraseIndex];
+                revealedPhraseElement.textContent = nextPhrase;
+                revealedPhraseElement.classList.remove('out'); 
+                revealedPhraseElement.classList.add('in'); // Animación de entrada
+                
+                // 4. Actualizar estado y contador
+                currentPhraseIndex++;
+                phraseCountDisplay.textContent = currentPhraseIndex;
+
+                // 5. Cerrar la Tapa (Después de que la frase "sale")
+                setTimeout(() => {
+                    loveChest.classList.remove('open');
+                    isAnimating = false;
+
+                    // Si es la última frase, preparar el cofre para la carta final
+                    if (currentPhraseIndex === CONFIG.MAX_PHRASES) {
+                        loveChest.removeEventListener('click', handleChestClick);
+                        loveChest.addEventListener('click', showFinal);
+                        // Ocultar la última frase después de un momento para el suspense
+                        setTimeout(() => {
+                            revealedPhraseElement.classList.remove('in');
+                        }, 2000); 
+                    }
+                }, CONFIG.ANIMATION_TIME); // Tiempo para que la frase sea visible
+                
+            }, CONFIG.ANIMATION_TIME); // Espera la apertura de la tapa
+            
+        } 
+    }
+    
+    // --- LÓGICA FINAL Y REINICIO ---
+    
+    function showFinal() {
+        if (isAnimating) return; 
+
+        // Abrir el cofre una última vez
+        loveChest.classList.add('open');
+        isAnimating = true;
+        
+        setTimeout(() => {
+            finalModal.classList.add("show");
+            restartBtn.disabled = false;
+            isAnimating = false;
+            
+            // Pausar la música al mostrar la carta
+            if (musicStarted) {
+                music.pause();
+            }
+        }, CONFIG.ANIMATION_TIME);
+    }
+    
+    function resetExperience() {
+        currentPhraseIndex = 0;
+        phraseCountDisplay.textContent = 0;
+        
+        // Limpiar animaciones y frases
+        loveChest.classList.remove('open');
+        revealedPhraseElement.classList.remove('in', 'out');
+        
+        restartBtn.disabled = true;
+
+        // Restaurar el listener original del cofre
+        loveChest.removeEventListener('click', showFinal);
+        loveChest.addEventListener('click', handleChestClick);
+        
+        // Reiniciar audio para el próximo ciclo
+        if (musicStarted) {
+            music.currentTime = 0;
+            music.muted = true;
+            musicStarted = false;
+            document.body.addEventListener('click', startMusic);
+            document.body.addEventListener('touchstart', startMusic);
+        }
+    }
+
+    // --- Asignación de Eventos ---
+    loveChest.addEventListener('click', handleChestClick);
+    restartBtn.addEventListener('click', resetExperience);
+    
+    // Cierre de Modal Final (CARTA) - Incluye reinicio automático
+    document.getElementById(CONFIG.CLOSE_FINAL_ID).addEventListener("click", () => {
+        finalModal.classList.remove("show");
+        resetExperience();
+    });
+</script>
+</body>
+</html>
